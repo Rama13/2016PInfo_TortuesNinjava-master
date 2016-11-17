@@ -1,3 +1,4 @@
+package ninja;
 import java.io.BufferedReader;
 import java.io.Reader;
 import java.io.IOException;
@@ -19,7 +20,7 @@ public class Main {
 	static String key = "&key=Pw9D)judG8FE4tJR3qjUTA((";
 	
 	public static void main(String[] args) throws MalformedURLException, IOException, JSONException {
-	 
+	
 		
 		System.setProperty("http.proxyHost", "cache.univ-st-etienne.fr");
 		System.setProperty("http.proxyPort", "3128");
@@ -31,7 +32,7 @@ public class Main {
 			System.out.println("Que souhaitez-vous faire ?");
 			System.out.println("1 - Utilisateur top tag");
 			System.out.println("2 - 10 utilisateurs les plus actifs");
-			System.out.println("3 - Utilisateur contribuant le plus dans un ensemble de sujets");
+			//System.out.println("3 - Utilisateur contribuant le plus dans un ensemble de sujets");
 			//System.out.println("0 - Sortir");
 			Scanner sc0 = new Scanner(System.in);
 			cmd = sc0.nextInt();
@@ -51,10 +52,7 @@ public class Main {
 					}
 				} while (true);
 				
-				if (tag1.equals("c#")) tag1 = "c%23";
-				
-				String addr1 = "http://api.stackexchange.com/2.2/tags/" + tag1 + "/top-answerers/all_time?site=stackoverflow"
-;
+				String addr1 = "http://api.stackexchange.com/2.2/tags/" + tag1 + "/top-answerers/all_time?site=stackoverflow" + key;
 				JSONObject json1 = readJsonFromUrl(addr1);
 				JSONArray tab1 = (JSONArray) json1.get("items");
 
@@ -75,11 +73,8 @@ public class Main {
 						break;
 					}
 				} while (true);
-				
-				if (tag2.equals("c#")) tag2 = "c%23";
 
-				String addr2 = "http://api.stackexchange.com/2.2/tags/" + tag2 + "/top-answerers/all_time?site=stackoverflow"
-;
+				String addr2 = "http://api.stackexchange.com/2.2/tags/" + tag2 + "/top-answerers/all_time?site=stackoverflow" + key ;
 				JSONObject json2 = readJsonFromUrl(addr2);
 				JSONArray tab2 = (JSONArray) json2.get("items");
 
@@ -95,41 +90,21 @@ public class Main {
 				}
 				break;
 			case 3 :
-				// PAR ENSEMBLE DE TAGS
-				String ens; String[] tags;
-				do {
-					System.out.println("Veuillez entrer les tags");
-					Scanner sc3 = new Scanner(System.in);
-					ens = sc3.nextLine();
-					tags = ens.split(" ");
-					
-					boolean b = true;
-					for (String s : tags) {
-						if (!checkTag(s)) {
-							System.out.println("Tag invalide.\n");
-							b = false;
-						}
-					}
-					if (b) break;
-				} while (true);		
 				
-				JSONArray js_ens = new JSONArray();
-				for (String s : tags) {
-					if (s.equals("c#")) s = "c%23";
-					String addr3 = "http://api.stackexchange.com/2.2/tags/" + s + "/top-answerers/all_time?site=stackoverflow";
-					js_ens.put(readJsonFromUrl(addr3).get("items"));
-					//System.out.println(readJsonFromUrl(addr3).get("items").toString());
-				}
-				JSONArray json3 = join (js_ens);
-				json3 = sortByPosts(json3);
-				System.out.println(json3.getJSONObject(0).getJSONObject("user").get("display_name"));
-				System.out.println(json3.getJSONObject(0).getJSONObject("user").get("link"));
-				System.out.println(json3.getJSONObject(0).get("post_count") + " posts au total");
 				break;
 			default :
 				
 				break;
 		}
+		
+		/*// PAR ENSEMBLE DE TAGS
+		String ens = "c javascript python";
+		String[] tags = ens.split(" ");
+		JSONArray js_ens = new JSONArray();
+		for (String s : tags) {
+			String addr3 = "http://api.stackexchange.com/2.2/tags/" + s + "/top-answerers/all_time?site=stackoverflow";
+			js_ens.put(readJsonFromUrl(addr2));
+		}*/
 		
 	}
 	public static JSONObject readJsonFromUrl (String url) throws MalformedURLException, IOException, JSONException {
@@ -174,7 +149,7 @@ public class Main {
 	
 	private static boolean checkTag (String tag) throws MalformedURLException, IOException, JSONException {
 		boolean b = false;
-		String addrTags = "http://api.stackexchange.com/2.2/tags?pagesize=100&order=desc&sort=popular&site=stackoverflow";
+		String addrTags = "http://api.stackexchange.com/2.2/tags?pagesize=100&order=desc&sort=popular&site=stackoverflow" + key;
 
 		JSONObject tagListO = readJsonFromUrl(addrTags);
 		JSONArray tagList = (JSONArray) tagListO.get("items");
@@ -182,38 +157,12 @@ public class Main {
 		for (int k = 0; k < tagList.length(); k++) {
 			if (tagList.getJSONObject(k).getString("name").equals(tag)) {
 				b = true;
+				//#=%23
 			}
 		}
 		
 		return b;
 	}
-	
-	private static JSONArray join (JSONArray a) throws JSONException {
-		JSONArray r = new JSONArray();
-		List<List<Integer>> annuaire = new ArrayList<List<Integer>>();
-		
-		for (int i = 0; i < a.length(); i++) {
-			for (int j = 0; j < a.getJSONArray(i).length(); j++) {
-				int id = a.getJSONArray(i).getJSONObject(j).getJSONObject("user").getInt("user_id");
-				annuaire.add(Arrays.asList(id, i, j, a.getJSONArray(i).getJSONObject(j).getInt("post_count")));
-			}
-		}
-		
-		for (int k = 0; k < annuaire.size(); k++) {
-			for (int l = k+1; l < annuaire.size(); l++) {
-				if (annuaire.get(k).get(0).equals(annuaire.get(l).get(0))) {
-					annuaire.get(k).set(3, annuaire.get(k).get(3) + annuaire.get(l).get(3));
-					annuaire.remove(l);
-				}
-			}
-		}
-		
-		for (List<Integer> g : annuaire) {
-			JSONObject o = a.getJSONArray(g.get(1)).getJSONObject(g.get(2));
-			o.put("post_count", g.get(3));
-			r.put(o);
-		}
-		
-		return r;
-	}
 }
+
+
